@@ -1,0 +1,3 @@
+pipeline { 
+agent any 
+""  tools {  msbuild 'MSBuild'  nuget 'NuGet'  }  ""  environment {  NUGET_EXE = tool 'NuGet'  }  ""  stages {  stage('Checkout') {  steps {  checkout scm  }  }  stage('Restore Packages') {  steps {  script {  bat "${NUGET_EXE}/nuget.exe restore"  }  }  }  stage('Build') {  steps {  script {  bat "msbuild MyConsoleApp.csproj /p:Configuration=Release"  }  }  }  stage('Create NuGet Package') {  steps {  script {  bat "${NUGET_EXE}/nuget.exe pack MyConsoleApp.csproj -OutputDirectory output -Properties Configuration=Release"  }  }  }  stage('Archive Package') {  steps {  archiveArtifacts artifacts: 'output/*.nupkg', allowEmptyArchive: false  }  }  }  } 
