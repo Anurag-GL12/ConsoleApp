@@ -2,11 +2,25 @@ pipeline {
     agent any
 
     stages {
+        stage('Print PATH') {
+            steps {
+                script {
+                    try {
+                        def pathOutput = bat(script: 'echo %PATH%', returnStdout: true)
+                        echo 'PATH environment variable:'
+                        echo pathOutput
+                    } catch (Exception e) {
+                        echo 'Failed to retrieve PATH environment variable.'
+                    }
+                }
+            }
+        }
+
         stage('Check MSBuild Plugin') {
             steps {
                 script {
                     try {
-                        def msbuildOutput = bat(script: 'msbuild -version', returnStdout: true)
+                        def msbuildOutput = bat(script: '"C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\MSBuild\\Current\\Bin\\MSBuild.exe" -version', returnStdout: true)
                         echo 'MSBuild Plugin is installed. Output:'
                         echo msbuildOutput
                     } catch (Exception e) {
@@ -20,7 +34,7 @@ pipeline {
             steps {
                 script {
                     try {
-                        def nugetOutput = bat(script: 'nuget', returnStdout: true)
+                        def nugetOutput = bat(script: 'C:\\Path\\To\\NuGet.exe', returnStdout: true)
                         echo 'NuGet Plugin is installed. Output:'
                         echo nugetOutput
                     } catch (Exception e) {
