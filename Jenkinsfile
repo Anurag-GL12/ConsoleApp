@@ -6,10 +6,11 @@ pipeline {
             steps {
                 script {
                     try {
-                        bat 'msbuild -version'
-                        echo 'MSBuild Plugin is installed.'
+                        def msbuildOutput = bat(script: 'msbuild -version', returnStdout: true)
+                        echo 'MSBuild Plugin is installed. Output:'
+                        echo msbuildOutput
                     } catch (Exception e) {
-                        echo 'MSBuild Plugin is NOT installed.'
+                        echo 'MSBuild Plugin is NOT installed or not found in PATH.'
                     }
                 }
             }
@@ -19,10 +20,11 @@ pipeline {
             steps {
                 script {
                     try {
-                        bat 'nuget'
-                        echo 'NuGet Plugin is installed.'
+                        def nugetOutput = bat(script: 'nuget', returnStdout: true)
+                        echo 'NuGet Plugin is installed. Output:'
+                        echo nugetOutput
                     } catch (Exception e) {
-                        echo 'NuGet Plugin is NOT installed.'
+                        echo 'NuGet Plugin is NOT installed or not found in PATH.'
                     }
                 }
             }
