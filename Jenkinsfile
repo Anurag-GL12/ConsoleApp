@@ -2,37 +2,53 @@ pipeline {
     agent any
     
     environment {
-        NUGET_API_KEY = credentials('nuget-api-key')
+        // Define environment variables if needed
+        NUGET_API_KEY = credentials('nuget-api-key') // Example credential usage
     }
     
     stages {
         stage('Checkout') {
             steps {
+                // Checkout your source code repository
                 checkout scm
             }
         }
-        
-        stage('Setup') {
+		stage('Setup') {
             steps {
-                // Perform setup steps if needed
                 script {
-                    // Example setup steps, adjust as per your needs
+                    // Download dotnet-install.ps1 script
                     bat 'powershell -command "Invoke-WebRequest -Uri https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1"'
+                }
+            }
+        }
+
+        stage('Install .NET SDK') {
+            steps {
+                script {
+                    // Install .NET SDK 7.0
                     bat 'powershell -executionpolicy bypass -file dotnet-install.ps1 -Channel 7.0 -InstallDir .dotnet'
+                    env.PATH = "${env.WORKSPACE}/.dotnet:${env.PATH}"
                 }
             }
         }
         
         stage('Build') {
             steps {
-                // Build your project
+                // Build your project using dotnet CLI
                 bat 'dotnet build --configuration Release'
             }
         }
         
-        stage('Pack') {
+        stage('Test') {
             steps {
-                // Pack your project into a NuGet package
+                // Run tests if applicable
+                bat 'dotnet test'
+            }
+        }
+        
+        stage('Package') {
+            steps {
+                // Package your application into a NuGet package
                 script {
                     def outputDir = bat(script: 'dotnet pack --configuration Release --output ./nupkgs --dry-run | findstr "Successfully created package"', returnStdout: true).trim()
                     echo "NuGet package is created in: ${outputDir}"
@@ -43,9 +59,9 @@ pipeline {
             }
         }
         
-        stage('Push to NuGet') {
+        stage('Publish') {
             steps {
-                // Push the NuGet package to a NuGet repository if needed
+                // Publish your NuGet package to a repository if needed
                 // Example:
                 // bat 'dotnet nuget push ./nupkgs/*.nupkg --api-key ${NUGET_API_KEY} --source https://api.nuget.org/v3/index.json'
             }
@@ -54,7 +70,8 @@ pipeline {
     
     post {
         always {
-            cleanWs() // Clean workspace after each build
+            // Clean up workspace after each build
+            cleanWs()
         }
     }
 }
