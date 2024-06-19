@@ -8,10 +8,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                script {
-                    // Checkout the repository
-                    checkout scm
-                }
+                checkout scm
             }
         }
 
