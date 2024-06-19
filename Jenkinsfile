@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        NUGET_API_KEY = credentials('oy2eachdqk5gzw2duu3qphbgexdwf5surjzjz7dbgnil2i') // Replace with your credential ID
+        NUGET_API_KEY = credentials('nuget-api-key') // Replace with your credential ID
     }
 
     stages {
