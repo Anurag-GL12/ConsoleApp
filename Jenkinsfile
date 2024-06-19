@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        NUGET_API_KEY = credentials('oy2eachdqk5gzw2duu3qphbgexdwf5surjzjz7dbgnil2i') // Replace 'nuget-api-key' with your credential ID
+        NUGET_API_KEY = credentials('oy2eachdqk5gzw2duu3qphbgexdwf5surjzjz7dbgnil2i') 
     }
 
     stages {
@@ -55,7 +55,7 @@ pipeline {
 
     post {
         always {
-            cleanWs()
+            cleanWs() // Make sure this is inside a node block
         }
     }
 }
