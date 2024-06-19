@@ -56,7 +56,7 @@ pipeline {
                     // Push the package to NuGet
                     def nuget = bat(script: 'where nuget', returnStdout: true).trim()
                     bat """
-                        "${nuget}" push ./nupkgs/*.nupkg -ApiKey ${nuget-api-key} -Source https://api.nuget.org/v3/index.json
+                        "${nuget}" push ./nupkgs/*.nupkg -ApiKey ${NUGET_API_KEY} -Source https://api.nuget.org/v3/index.json
                     """
                 }
             }
