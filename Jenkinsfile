@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        NUGET_API_KEY = credentials('nuget-api-key') // Replace with your credential ID
+        NUGET_API_KEY = credentials('nuget-api-key')
     }
 
     stages {
@@ -25,7 +25,7 @@ pipeline {
                     env.PATH = "${env.WORKSPACE}/.dotnet:${env.PATH}"
 
                     // Build the project
-                    sh 'dotnet build --configuration Release'
+                    bat "\"${env.WORKSPACE}/.dotnet/dotnet.exe\" build --configuration Release"
                 }
             }
         }
@@ -34,7 +34,7 @@ pipeline {
             steps {
                 script {
                     // Pack the project
-                    sh 'dotnet pack --configuration Release --output ./nupkgs'
+                    bat "\"${env.WORKSPACE}/.dotnet/dotnet.exe\" pack --configuration Release --output ./nupkgs"
                 }
             }
         }
@@ -43,10 +43,10 @@ pipeline {
             steps {
                 script {
                     // Push the package to NuGet
-                    sh """
-                        find ./nupkgs -name "*.nupkg" | while read pkg; do
-                            dotnet nuget push "\${pkg}" --api-key ${NUGET_API_KEY} --source https://api.nuget.org/v3/index.json
-                        done
+                    bat """
+                        for /r .\nupkgs %%f in (*.nupkg) do (
+                            \"${env.WORKSPACE}/.dotnet/dotnet.exe\" nuget push \"%%f\" --api-key ${NUGET_API_KEY} --source https://api.nuget.org/v3/index.json
+                        )
                     """
                 }
             }
@@ -55,13 +55,11 @@ pipeline {
 
     post {
         always {
-            script {
-                // Ensure cleanWs() is inside a node block
-                node {
-                    cleanWs()
-                    deleteDir()
-                }
-            }
+            cleanWs() // Clean workspace
         }
+    }
+
+    options {
+        skipStagesAfterUnstable()
     }
 }
