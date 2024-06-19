@@ -3,6 +3,7 @@ pipeline {
 
     environment {
         NUGET_API_KEY = credentials('nuget-api-key')
+        NUGET_EXE_URL = 'https://dist.nuget.org/win-x86-commandline/latest/nuget.exe'
     }
 
     stages {
@@ -50,13 +51,22 @@ pipeline {
             }
         }
 
+        stage('Download NuGet') {
+            steps {
+                script {
+                    // Download nuget.exe
+                    bat "powershell -command \"Invoke-WebRequest -Uri ${env.NUGET_EXE_URL} -OutFile nuget.exe\""
+                }
+            }
+        }
+
         stage('Push to NuGet') {
             steps {
                 script {
-                    // Push the package to NuGet
+                    // Push the package to NuGet using downloaded nuget.exe
                     def nuget = bat(script: 'where nuget', returnStdout: true).trim()
                     bat """
-                        "${nuget}" push ./nupkgs/*.nupkg -ApiKey ${NUGET_API_KEY} -Source https://api.nuget.org/v3/index.json
+                        "${nuget}" push ./nupkgs/*.nupkg -ApiKey "${NUGET_API_KEY}" -Source https://api.nuget.org/v3/index.json
                     """
                 }
             }
