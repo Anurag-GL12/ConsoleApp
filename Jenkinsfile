@@ -59,6 +59,7 @@ pipeline {
                 // Ensure cleanWs() is inside a node block
                 node {
                     cleanWs()
+                    deleteDir()
                 }
             }
         }
