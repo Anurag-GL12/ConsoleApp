@@ -18,10 +18,13 @@ pipeline {
         stage('Build') {
             steps {
                 script {
-                    // Install .NET SDK if not already installed
-                    def sdkUrl = "https://dot.net/v1/dotnet-install.sh"
-                    bat "powershell wget ${sdkUrl} -OutFile dotnet-install.sh"
-                    bat "./dotnet-install.sh --channel 7.0"
+                    // Download and install .NET SDK
+                    def dotnetInstallerUrl = "https://dot.net/v1/dotnet-install.ps1"
+                    bat "powershell -command \"Invoke-WebRequest -Uri ${dotnetInstallerUrl} -OutFile dotnet-install.ps1\""
+                    bat "powershell -executionpolicy bypass -file dotnet-install.ps1 -Channel 7.0 -InstallDir .dotnet"
+
+                    // Add .NET to PATH
+                    env.PATH = "${env.WORKSPACE}/.dotnet:${env.PATH}"
 
                     // Build the project
                     bat "dotnet build --configuration Release"
