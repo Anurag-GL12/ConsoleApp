@@ -1,47 +1,61 @@
 pipeline {
     agent any
 
+    environment {
+        NUGET_API_KEY = credentials('oy2eachdqk5gzw2duu3qphbgexdwf5surjzjz7dbgnil2i') // Replace 'nuget-api-key' with your credential ID
+    }
+
     stages {
-        stage('Print PATH') {
+        stage('Checkout') {
+            steps {
+                git url: 'https://github.com/Anurag-GL12/ConsoleApp.git', branch: 'master'
+            }
+        }
+
+        stage('Build') {
             steps {
                 script {
-                    try {
-                        def pathOutput = bat(script: 'echo %PATH%', returnStdout: true)
-                        echo 'PATH environment variable:'
-                        echo pathOutput
-                    } catch (Exception e) {
-                        echo 'Failed to retrieve PATH environment variable.'
-                    }
+                    // Install .NET SDK if not already installed
+                    def sdkUrl = "https://dot.net/v1/dotnet-install.sh"
+                    sh "wget ${sdkUrl} -O dotnet-install.sh"
+                    sh "chmod +x ./dotnet-install.sh"
+                    sh "./dotnet-install.sh --channel 7.0"
+
+                    // Add .NET to PATH
+                    env.PATH = "${env.WORKSPACE}/.dotnet:${env.PATH}"
+
+                    // Build the project
+                    sh 'dotnet build --configuration Release'
                 }
             }
         }
 
-        stage('Check MSBuild Plugin') {
+        stage('Pack') {
             steps {
                 script {
-                    try {
-                        def msbuildOutput = bat(script: '"C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\MSBuild\\Current\\Bin\\MSBuild.exe" -version', returnStdout: true)
-                        echo 'MSBuild Plugin is installed. Output:'
-                        echo msbuildOutput
-                    } catch (Exception e) {
-                        echo 'MSBuild Plugin is NOT installed or not found in PATH.'
-                    }
+                    // Pack the project
+                    sh 'dotnet pack --configuration Release --output ./nupkgs'
                 }
             }
         }
 
-        stage('Check NuGet Plugin') {
+        stage('Push to NuGet') {
             steps {
                 script {
-                    try {
-                        def nugetOutput = bat(script: 'C:\\Path\\To\\NuGet.exe', returnStdout: true)
-                        echo 'NuGet Plugin is installed. Output:'
-                        echo nugetOutput
-                    } catch (Exception e) {
-                        echo 'NuGet Plugin is NOT installed or not found in PATH.'
-                    }
+                    // Push the package to NuGet
+                    sh """
+                        find ./nupkgs -name "*.nupkg" | while read pkg; do
+                            dotnet nuget push "\${pkg}" --api-key ${NUGET_API_KEY} --source https://api.nuget.org/v3/index.json
+                        done
+                    """
                 }
             }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()
         }
     }
 }
