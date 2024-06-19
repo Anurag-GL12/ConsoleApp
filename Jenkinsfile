@@ -8,7 +8,10 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git url: 'https://github.com/Anurag-GL12/ConsoleApp.git', branch: 'master'
+                script {
+                    // Checkout the repository
+                    checkout scm
+                }
             }
         }
 
@@ -17,15 +20,11 @@ pipeline {
                 script {
                     // Install .NET SDK if not already installed
                     def sdkUrl = "https://dot.net/v1/dotnet-install.sh"
-                    sh "wget ${sdkUrl} -O dotnet-install.sh"
-                    sh "chmod +x ./dotnet-install.sh"
-                    sh "./dotnet-install.sh --channel 7.0"
-
-                    // Add .NET to PATH
-                    env.PATH = "${env.WORKSPACE}/.dotnet:${env.PATH}"
+                    bat "powershell wget ${sdkUrl} -OutFile dotnet-install.sh"
+                    bat "./dotnet-install.sh --channel 7.0"
 
                     // Build the project
-                    bat "\"${env.WORKSPACE}/.dotnet/dotnet.exe\" build --configuration Release"
+                    bat "dotnet build --configuration Release"
                 }
             }
         }
@@ -34,7 +33,7 @@ pipeline {
             steps {
                 script {
                     // Pack the project
-                    bat "\"${env.WORKSPACE}/.dotnet/dotnet.exe\" pack --configuration Release --output ./nupkgs"
+                    bat "dotnet pack --configuration Release --output ./nupkgs"
                 }
             }
         }
@@ -45,7 +44,7 @@ pipeline {
                     // Push the package to NuGet
                     bat """
                         for /r .\nupkgs %%f in (*.nupkg) do (
-                            \"${env.WORKSPACE}/.dotnet/dotnet.exe\" nuget push \"%%f\" --api-key ${NUGET_API_KEY} --source https://api.nuget.org/v3/index.json
+                            dotnet nuget push "%%f" --api-key ${NUGET_API_KEY} --source https://api.nuget.org/v3/index.json
                         )
                     """
                 }
@@ -57,9 +56,5 @@ pipeline {
         always {
             cleanWs() // Clean workspace
         }
-    }
-
-    options {
-        skipStagesAfterUnstable()
     }
 }
