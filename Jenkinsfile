@@ -12,19 +12,32 @@ pipeline {
             }
         }
 
-        stage('Build') {
+        stage('Setup') {
             steps {
                 script {
-                    // Download and install .NET SDK
-                    def dotnetInstallerUrl = "https://dot.net/v1/dotnet-install.ps1"
-                    bat "powershell -command \"Invoke-WebRequest -Uri ${dotnetInstallerUrl} -OutFile dotnet-install.ps1\""
-                    bat "powershell -executionpolicy bypass -file dotnet-install.ps1 -Channel 7.0 -InstallDir .dotnet"
+                    // Download dotnet-install.ps1 script
+                    bat 'powershell -command "Invoke-WebRequest -Uri https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1"'
+                }
+            }
+        }
+
+        stage('Install .NET SDK') {
+            steps {
+                script {
+                    // Install .NET SDK 7.0
+                    bat 'powershell -executionpolicy bypass -file dotnet-install.ps1 -Channel 7.0 -InstallDir .dotnet'
 
                     // Add .NET to PATH
                     env.PATH = "${env.WORKSPACE}/.dotnet:${env.PATH}"
+                }
+            }
+        }
 
+        stage('Build') {
+            steps {
+                script {
                     // Build the project
-                    bat "dotnet build --configuration Release"
+                    bat 'dotnet build --configuration Release'
                 }
             }
         }
@@ -33,7 +46,7 @@ pipeline {
             steps {
                 script {
                     // Pack the project
-                    bat "dotnet pack --configuration Release --output ./nupkgs"
+                    bat 'dotnet pack --configuration Release --output ./nupkgs'
                 }
             }
         }
@@ -54,7 +67,7 @@ pipeline {
 
     post {
         always {
-            cleanWs() // Clean workspace
+            cleanWs() // Clean workspace after build completes
         }
     }
 }
