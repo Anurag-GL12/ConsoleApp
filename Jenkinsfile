@@ -57,7 +57,7 @@ pipeline {
                     // Push the package to NuGet
                     bat """
                         for /r .\nupkgs %%f in (*.nupkg) do (
-                            dotnet nuget push "%%f" --api-key ${NUGET_API_KEY} --source https://api.nuget.org/v3/index.json
+                            dotnet nuget push "%%f" --api-key ${nuget-api-key} --source https://api.nuget.org/v3/index.json
                         )
                     """
                 }
