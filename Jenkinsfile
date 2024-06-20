@@ -7,6 +7,17 @@ pipeline {
     }
 
     stages {
+        stage('Find nuget.exe') {
+            steps {
+                script {
+                    // Find the path to nuget.exe
+                    def nuget = bat(script: 'where nuget', returnStdout: true).trim()
+                    echo "Found nuget.exe at: ${nuget}"
+                    env.NUGET_EXE_PATH = nuget
+                }
+            }
+        }
+
         stage('Checkout') {
             steps {
                 checkout scm
@@ -54,8 +65,10 @@ pipeline {
         stage('Download NuGet') {
             steps {
                 script {
-                    // Download nuget.exe
-                    bat "powershell -command \"Invoke-WebRequest -Uri ${env.NUGET_EXE_URL} -OutFile nuget.exe\""
+                    // Download nuget.exe if not already found
+                    if (!fileExists("${env.NUGET_EXE_PATH}")) {
+                        powershell "Invoke-WebRequest -Uri ${env.NUGET_EXE_URL} -OutFile nuget.exe"
+                    }
                 }
             }
         }
@@ -63,13 +76,8 @@ pipeline {
         stage('Push to NuGet') {
             steps {
                 script {
-                    // Find the path to nuget.exe
-                    def nuget = bat(script: 'where nuget', returnStdout: true).trim()
-
                     // Push the package to NuGet using downloaded nuget.exe
-                    bat """
-                        "${nuget}" push ./nupkgs/*.nupkg -ApiKey "${NUGET_API_KEY}" -Source https://api.nuget.org/v3/index.json
-                    """
+                    bat "\"${env.NUGET_EXE_PATH}\" push ./nupkgs/*.nupkg -ApiKey \"${NUGET_API_KEY}\" -Source https://api.nuget.org/v3/index.json"
                 }
             }
         }
