@@ -63,8 +63,10 @@ pipeline {
         stage('Push to NuGet') {
             steps {
                 script {
-                    // Push the package to NuGet using downloaded nuget.exe
+                    // Find the path to nuget.exe
                     def nuget = bat(script: 'where nuget', returnStdout: true).trim()
+
+                    // Push the package to NuGet using downloaded nuget.exe
                     bat """
                         "${nuget}" push ./nupkgs/*.nupkg -ApiKey "${NUGET_API_KEY}" -Source https://api.nuget.org/v3/index.json
                     """
