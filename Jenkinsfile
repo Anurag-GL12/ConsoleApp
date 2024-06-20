@@ -2,8 +2,9 @@ pipeline {
     agent any
 
     environment {
+        NUGET_API_KEY = credentials('nuget-api-key')
         NUGET_EXE_URL = 'https://dist.nuget.org/win-x86-commandline/latest/nuget.exe'
-        GITHUB_PACKAGES_PAT = credentials('github-pat')
+        GITHUB_PAT = credentials('github-pat') // Add this line to retrieve GitHub PAT
     }
 
     stages {
@@ -103,13 +104,23 @@ pipeline {
             }
         }
 
+        stage('Configure GitHub PAT') {
+            steps {
+                script {
+                    // Write GitHub PAT to a temporary file
+                    def patFile = writeFile file: 'github-pat.txt', text: GITHUB_PAT
+                    echo "GitHub PAT file written to: ${patFile}"
+                }
+            }
+        }
+
         stage('Push to GitHub Packages') {
             steps {
                 script {
                     try {
-                        // Push the package to GitHub Packages using downloaded nuget.exe
+                        // Push the package to GitHub Packages using downloaded nuget.exe and GitHub PAT
                         def nugetPath = env.NUGET_EXE_PATH ?: "nuget"
-                        def command = "\"${nugetPath}\" push ./nupkgs/*.nupkg -ApiKey \"${GITHUB_PACKAGES_PAT}\" -Source https://nuget.pkg.github.com/OWNER/index.json"
+                        def command = "\"${nugetPath}\" push ./nupkgs/*.nupkg -Source https://nuget.pkg.github.com/OWNER/index.json -ApiKey ${GITHUB_PAT}"
                         bat(script: command, returnStatus: true)
                     } catch (Exception e) {
                         error "Push to GitHub Packages failed: ${e.message}"
