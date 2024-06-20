@@ -87,8 +87,14 @@ pipeline {
                 script {
                     try {
                         // Download nuget.exe if not already found
-                        if (!fileExists("${env.NUGET_EXE_PATH}")) {
-                            powershell "Invoke-WebRequest -Uri ${env.NUGET_EXE_URL} -OutFile nuget.exe"
+                        def nugetPath = bat(script: 'where nuget', returnStatus: true)
+                        if (nugetPath == 0) {
+                            echo 'Found nuget.exe in PATH'
+                        } else {
+                            // Download nuget.exe if not found
+                            echo 'Downloading nuget.exe'
+                            def downloadCmd = "powershell -Command \"Invoke-WebRequest -Uri ${NUGET_EXE_URL} -OutFile nuget.exe\""
+                            bat returnStdout: false, script: downloadCmd
                         }
                     } catch (Exception e) {
                         error "Failed to download nuget.exe: ${e.message}"
