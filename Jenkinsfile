@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     environment {
-        NUGET_API_KEY = credentials('nuget-api-key')
         NUGET_EXE_URL = 'https://dist.nuget.org/win-x86-commandline/latest/nuget.exe'
+        GITHUB_PACKAGES_PAT = credentials('github-pat')
     }
 
     stages {
@@ -103,19 +103,19 @@ pipeline {
             }
         }
 
-        stage('Push to NuGet') {
+        stage('Push to GitHub Packages') {
             steps {
-        script {
-            try {
-                // Push the package to NuGet using downloaded nuget.exe
-                def nugetPath = env.NUGET_EXE_PATH ?: "nuget"
-                def command = "\"${nugetPath}\" push ./nupkgs/*.nupkg -ApiKey \"${NUGET_API_KEY}\" -Source https://api.nuget.org/v3/index.json"
-                bat(script: command, returnStatus: true)
-            } catch (Exception e) {
-                error "Push to NuGet failed: ${e.message}"
+                script {
+                    try {
+                        // Push the package to GitHub Packages using downloaded nuget.exe
+                        def nugetPath = env.NUGET_EXE_PATH ?: "nuget"
+                        def command = "\"${nugetPath}\" push ./nupkgs/*.nupkg -ApiKey \"${GITHUB_PACKAGES_PAT}\" -Source https://nuget.pkg.github.com/OWNER/index.json"
+                        bat(script: command, returnStatus: true)
+                    } catch (Exception e) {
+                        error "Push to GitHub Packages failed: ${e.message}"
+                    }
+                }
             }
-        }
-    }
         }
     }
 }
