@@ -11,9 +11,13 @@ pipeline {
             steps {
                 script {
                     // Find the path to nuget.exe
-                    def nuget = bat(script: 'where nuget', returnStdout: true).trim()
-                    echo "Found nuget.exe at: ${nuget}"
-                    env.NUGET_EXE_PATH = nuget
+                    def nugetOutput = bat(script: 'where nuget', returnStdout: true).trim()
+                    // Split the output to get the first path only
+                    def nugetPaths = nugetOutput.split('\n')
+                    def nugetPath = nugetPaths[0].trim() // Choose the first path found
+
+                    echo "Found nuget.exe at: ${nugetPath}"
+                    env.NUGET_EXE_PATH = nugetPath
                 }
             }
         }
@@ -26,9 +30,14 @@ pipeline {
 
         stage('Setup') {
             steps {
+                // Setup .NET SDK installation
                 script {
-                    // Setup .NET SDK installation
-                    bat 'powershell -command "Invoke-WebRequest -Uri https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1"'
+                    try {
+                        // Download dotnet-install.ps1 script
+                        bat 'powershell -command "Invoke-WebRequest -Uri https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1"'
+                    } catch (Exception e) {
+                        error "Failed to download dotnet-install.ps1: ${e.message}"
+                    }
                 }
             }
         }
@@ -36,9 +45,13 @@ pipeline {
         stage('Install .NET SDK') {
             steps {
                 script {
-                    // Install .NET SDK 7.0
-                    bat 'powershell -executionpolicy bypass -file dotnet-install.ps1 -Channel 7.0 -InstallDir .dotnet'
-                    env.PATH = "${env.WORKSPACE}/.dotnet:${env.PATH}"
+                    try {
+                        // Install .NET SDK 7.0
+                        bat 'powershell -executionpolicy bypass -file dotnet-install.ps1 -Channel 7.0 -InstallDir .dotnet'
+                        env.PATH = "${env.WORKSPACE}/.dotnet:${env.PATH}"
+                    } catch (Exception e) {
+                        error "Failed to install .NET SDK: ${e.message}"
+                    }
                 }
             }
         }
@@ -46,8 +59,12 @@ pipeline {
         stage('Build') {
             steps {
                 script {
-                    // Build the project
-                    bat 'dotnet build --configuration Release'
+                    try {
+                        // Build the project
+                        bat 'dotnet build --configuration Release'
+                    } catch (Exception e) {
+                        error "Build failed: ${e.message}"
+                    }
                 }
             }
         }
@@ -55,8 +72,12 @@ pipeline {
         stage('Pack') {
             steps {
                 script {
-                    // Pack the project
-                    bat 'dotnet pack --configuration Release --output ./nupkgs'
+                    try {
+                        // Pack the project
+                        bat 'dotnet pack --configuration Release --output ./nupkgs'
+                    } catch (Exception e) {
+                        error "Packaging failed: ${e.message}"
+                    }
                 }
             }
         }
@@ -64,9 +85,13 @@ pipeline {
         stage('Download NuGet') {
             steps {
                 script {
-                    // Download nuget.exe if not already found
-                    if (!fileExists("${env.NUGET_EXE_PATH}")) {
-                        powershell "Invoke-WebRequest -Uri ${env.NUGET_EXE_URL} -OutFile nuget.exe"
+                    try {
+                        // Download nuget.exe if not already found
+                        if (!fileExists("${env.NUGET_EXE_PATH}")) {
+                            powershell "Invoke-WebRequest -Uri ${env.NUGET_EXE_URL} -OutFile nuget.exe"
+                        }
+                    } catch (Exception e) {
+                        error "Failed to download nuget.exe: ${e.message}"
                     }
                 }
             }
@@ -75,9 +100,13 @@ pipeline {
         stage('Push to NuGet') {
             steps {
                 script {
-                    // Push the package to NuGet using downloaded nuget.exe
-                    def nugetPath = env.NUGET_EXE_PATH ?: "nuget"
-                    bat "\"${nugetPath}\" push ./nupkgs/*.nupkg -ApiKey \"${NUGET_API_KEY}\" -Source https://api.nuget.org/v3/index.json"
+                    try {
+                        // Push the package to NuGet using downloaded nuget.exe
+                        def nugetPath = env.NUGET_EXE_PATH ?: "nuget"
+                        bat "\"${nugetPath}\" push ./nupkgs/*.nupkg -ApiKey \"${NUGET_API_KEY}\" -Source https://api.nuget.org/v3/index.json"
+                    } catch (Exception e) {
+                        error "Push to NuGet failed: ${e.message}"
+                    }
                 }
             }
         }
