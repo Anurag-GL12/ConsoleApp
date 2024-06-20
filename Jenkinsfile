@@ -26,9 +26,8 @@ pipeline {
 
         stage('Setup') {
             steps {
-                // Setup .NET SDK installation
                 script {
-                    // Download dotnet-install.ps1 script
+                    // Setup .NET SDK installation
                     bat 'powershell -command "Invoke-WebRequest -Uri https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1"'
                 }
             }
@@ -77,7 +76,8 @@ pipeline {
             steps {
                 script {
                     // Push the package to NuGet using downloaded nuget.exe
-                    bat "\"${env.NUGET_EXE_PATH}\" push ./nupkgs/*.nupkg -ApiKey \"${NUGET_API_KEY}\" -Source https://api.nuget.org/v3/index.json"
+                    def nugetPath = env.NUGET_EXE_PATH ?: "nuget"
+                    bat "\"${nugetPath}\" push ./nupkgs/*.nupkg -ApiKey \"${NUGET_API_KEY}\" -Source https://api.nuget.org/v3/index.json"
                 }
             }
         }
