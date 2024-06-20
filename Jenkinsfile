@@ -105,16 +105,17 @@ pipeline {
 
         stage('Push to NuGet') {
             steps {
-                script {
-                    try {
-                        // Push the package to NuGet using downloaded nuget.exe
-                        def nugetPath = env.NUGET_EXE_PATH ?: "nuget"
-                        bat "\"${nugetPath}\" push ./nupkgs/*.nupkg -ApiKey \"${NUGET_API_KEY}\" -Source https://api.nuget.org/v3/index.json"
-                    } catch (Exception e) {
-                        error "Push to NuGet failed: ${e.message}"
-                    }
-                }
+        script {
+            try {
+                // Push the package to NuGet using downloaded nuget.exe
+                def nugetPath = env.NUGET_EXE_PATH ?: "nuget"
+                def command = "\"${nugetPath}\" push ./nupkgs/*.nupkg -ApiKey \"${NUGET_API_KEY}\" -Source https://api.nuget.org/v3/index.json"
+                bat(script: command, returnStatus: true)
+            } catch (Exception e) {
+                error "Push to NuGet failed: ${e.message}"
             }
+        }
+    }
         }
     }
 }
